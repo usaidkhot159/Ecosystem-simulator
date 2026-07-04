@@ -1,0 +1,28 @@
+/* totals.css */
+.chip-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.chip {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.chip .v {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--blue);
+  font-variant-numeric: tabular-nums;
+}
+
+.chip .l {
+  font-size: 0.6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 1px;
+}
