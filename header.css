@@ -1,0 +1,15 @@
+/* header.css */
+.app-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.app-title span { color: var(--green); }
+
+.app-sub {
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
