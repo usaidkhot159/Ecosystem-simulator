@@ -1,0 +1,32 @@
+/* controls.css */
+.ctrl-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.spd-row {
+  display: flex;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.spd {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: var(--panel2);
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 6px 0;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font);
+}
+
+.spd.on,
+.spd:hover {
+  background: var(--blue);
+  color: #071828;
+  border-color: var(--blue);
+}
