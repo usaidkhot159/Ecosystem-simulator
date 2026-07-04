@@ -1,0 +1,51 @@
+/* layout.css */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 12px 28px;
+  gap: var(--gap);
+}
+
+.app-header {
+  width: 100%;
+  max-width: 1160px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.main-grid {
+  width: 100%;
+  max-width: 1160px;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: var(--gap);
+  align-items: start;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend {
+  max-width: 1160px;
+  width: 100%;
+  font-size: 0.69rem;
+  color: rgba(226,232,240,0.38);
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 2px;
+}
+
+@media (max-width: 860px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
