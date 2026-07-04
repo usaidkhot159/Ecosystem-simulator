@@ -1,0 +1,22 @@
+/* animations.css */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.live-badge {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.pop-count {
+  transition: color 0.3s;
+}
+
+.card {
+  animation: fadeIn 0.4s ease both;
+}
