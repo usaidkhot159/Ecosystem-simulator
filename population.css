@@ -1,0 +1,35 @@
+/* population.css */
+.pop-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.pop-item {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 9px 6px 7px;
+  text-align: center;
+}
+
+.pop-icon  { font-size: 1.3rem; line-height: 1; }
+
+.pop-count {
+  font-size: 1.45rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  margin: 2px 0;
+  line-height: 1;
+}
+
+.pop-label {
+  font-size: 0.6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.pop-item.pl .pop-count { color: var(--green);  }
+.pop-item.he .pop-count { color: var(--yellow); }
+.pop-item.pr .pop-count { color: var(--red);    }
