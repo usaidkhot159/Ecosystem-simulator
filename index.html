@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Virtual Ecosystem Simulator</title>
+<style>
+/* === css/reset.css === */
+/* reset.css */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* === css/variables.css === */
+/* variables.css — design tokens */
+:root {
+  --bg:     #080c14;
+  --panel:  #0d1422;
+  --panel2: #111827;
+  --border: rgba(255,255,255,0.08);
+  --text:   #e2e8f0;
+  --muted:  rgba(226,232,240,0.5);
+
+  --green:  #4ade80;
+  --yellow: #facc15;
+  --red:    #f87171;
+  --blue:   #60a5fa;
+
+  --font:   system-ui, -apple-system, sans-serif;
+  --mono:   'Courier New', monospace;
+  --radius: 10px;
+  --gap:    12px;
+}
+
+/* === css/layout.css === */
+/* layout.css */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 12px 28px;
+  gap: var(--gap);
+}
+
+.app-header {
+  width: 100%;
+  max-width: 1160px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.main-grid {
+  width: 100%;
+  max-width: 1160px;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: var(--gap);
+  align-items: start;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend {
+  max-width: 1160px;
+  width: 100%;
+  font-size: 0.69rem;
+  color: rgba(226,232,240,0.38);
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 2px;
+}
+
+@media (max-width: 860px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+
+/* === css/header.css === */
+/* header.css */
+.app-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.app-title span { color: var(--green); }
+
+.app-sub {
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+/* === css/canvas.css === */
+/* canvas.css */
+.canvas-wrap {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #06080f;
+  line-height: 0;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 840 / 560;
+}
+
+.live-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 3px 9px;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* === css/card.css === */
+/* card.css */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+}
+
+.card-title {
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+/* === css/population.css === */
+/* population.css */
+.pop-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.pop-item {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 9px 6px 7px;
+  text-align: center;
+}
+
+.pop-icon  { font-size: 1.3rem; line-height: 1; }
+
+.pop-count {
+  font-size: 1.45rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  margin: 2px 0;
+  line-height: 1;
+}
+
+.pop-label {
+  font-size: 0.6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.pop-item.pl .pop-count { color: var(--green);  }
+.pop-item.he .pop-count { color: var(--yellow); }
+.pop-item.pr .pop-count { color: var(--red);    }
+
+/* === css/environment.css === */
+/* environment.css */
+.env-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.79rem;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.env-row:last-child { border: none; }
+
+.env-lbl { color: var(--muted); }
+
+.env-val {
+  font-weight: 600;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* === css/genetics.css === */
+/* genetics.css */
+.tt {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.77rem;
+}
+
+.tt th {
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding-bottom: 6px;
+  font-weight: 600;
+}
+
+.tt td { padding: 4px 0; font-variant-numeric: tabular-nums; }
+.tt tr + tr td { border-top: 1px solid var(--border); }
+
+.tl { color: var(--muted); }
+.ty { color: var(--yellow); }
+.tr { color: var(--red); }
+
+.bar-w {
+  width: 62px;
+  height: 4px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 3px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 5px;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s;
+}
+
+/* === css/totals.css === */
+/* totals.css */
+.chip-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.chip {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.chip .v {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--blue);
+  font-variant-numeric: tabular-nums;
+}
+
+.chip .l {
+  font-size: 0.6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 1px;
+}
+
+/* === css/buttons.css === */
+/* buttons.css */
+.btn {
+  border: none;
+  border-radius: 7px;
+  padding: 9px 8px;
+  font-size: 0.77rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: var(--font);
+}
+.btn:hover  { opacity: 0.82; }
+.btn:active { transform: scale(0.97); }
+
+.btn-pri { background: var(--green);  color: #071a0c; }
+.btn-sec { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+.btn-y   { background: rgba(250,204,21,0.13); color: var(--yellow); border: 1px solid rgba(250,204,21,0.28); }
+.btn-r   { background: rgba(248,113,113,0.11); color: var(--red);   border: 1px solid rgba(248,113,113,0.24); }
+.btn-g   { background: rgba(74,222,128,0.11);  color: var(--green); border: 1px solid rgba(74,222,128,0.24); }
+
+.full { grid-column: span 2; }
+
+/* === css/controls.css === */
+/* controls.css */
+.ctrl-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.spd-row {
+  display: flex;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.spd {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: var(--panel2);
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 6px 0;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font);
+}
+
+.spd.on,
+.spd:hover {
+  background: var(--blue);
+  color: #071828;
+  border-color: var(--blue);
+}
+
+/* === css/animations.css === */
+/* animations.css */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.live-badge {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.pop-count {
+  transition: color 0.3s;
+}
+
+.card {
+  animation: fadeIn 0.4s ease both;
+}
+
+/* === css/utilities.css === */
+/* utilities.css */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--panel); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+::selection { background: rgba(96,165,250,0.25); }
+
+.text-green  { color: var(--green);  }
+.text-yellow { color: var(--yellow); }
+.text-red    { color: var(--red);    }
+.text-blue   { color: var(--blue);   }
+.text-muted  { color: var(--muted);  }
+
+.mt-sm { margin-top: 6px;  }
+.mt-md { margin-top: 11px; }
+
+.tabular { font-variant-numeric: tabular-nums; }
+
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1 class="app-title">🌿 Virtual <span>Ecosystem</span></h1>
+  <span class="app-sub">Evolution · Food Chain · Climate</span>
+</header>
+
+<div class="main-grid">
+  <div class="canvas-wrap">
+    <canvas id="eco" width="840" height="560"></canvas>
+    <div class="live-badge">● LIVE SIMULATION</div>
+  </div>
+  <aside class="side">
+    <div class="card">
+      <div class="card-title">Population</div>
+      <div class="pop-grid">
+        <div class="pop-item pl"><div class="pop-icon">🌿</div><div class="pop-count" id="cPlants">0</div><div class="pop-label">Plants</div></div>
+        <div class="pop-item he"><div class="pop-icon">🐇</div><div class="pop-count" id="cHerbs">0</div><div class="pop-label">Prey</div></div>
+        <div class="pop-item pr"><div class="pop-icon">🦊</div><div class="pop-count" id="cPreds">0</div><div class="pop-label">Predators</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Environment</div>
+      <div class="env-row"><span class="env-lbl">Day</span><span class="env-val" id="eDay">1</span></div>
+      <div class="env-row"><span class="env-lbl">Time</span><span class="env-val" id="eTime">—</span></div>
+      <div class="env-row"><span class="env-lbl">Weather</span><span class="env-val" id="eWeather">—</span></div>
+      <div class="env-row"><span class="env-lbl">Daylight</span><span class="env-val" id="eDL">—</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Average Genetics</div>
+      <table class="tt">
+        <thead><tr><th>Trait</th><th class="ty">🐇 Prey</th><th class="tr">🦊 Pred</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="tl">Speed</td>
+            <td class="ty"><span id="tHS">—</span><span class="bar-w"><span class="bar" id="bHS"></span></span></td>
+            <td class="tr"><span id="tPS">—</span><span class="bar-w"><span class="bar" id="bPS"></span></span></td>
+          </tr>
+          <tr><td class="tl">Vision</td><td class="ty" id="tHV">—</td><td class="tr" id="tPV">—</td></tr>
+          <tr><td class="tl">Size</td><td class="ty" id="tHSz">—</td><td class="tr" id="tPSz">—</td></tr>
+          <tr><td class="tl">Max Gen</td><td class="ty" id="tHG">0</td><td class="tr" id="tPG">0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Lifetime Totals</div>
+      <div class="chip-grid">
+        <div class="chip"><div class="v" id="totHB">0</div><div class="l">Prey Born</div></div>
+        <div class="chip"><div class="v" id="totHD">0</div><div class="l">Prey Deaths</div></div>
+        <div class="chip"><div class="v" id="totPB">0</div><div class="l">Pred Born</div></div>
+        <div class="chip"><div class="v" id="totK">0</div><div class="l">Kills</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Controls</div>
+      <div class="ctrl-grid">
+        <button class="btn btn-pri" id="btnPause">⏸ Pause</button>
+        <button class="btn btn-sec" id="btnReset">↺ Reset</button>
+        <button class="btn btn-g"   id="btnPlant">🌿 +Plants</button>
+        <button class="btn btn-y"   id="btnHerb">🐇 +Prey</button>
+        <button class="btn btn-r full" id="btnPred">🦊 +Predator</button>
+      </div>
+      <div class="card-title mt-md">Speed</div>
+      <div class="spd-row">
+        <button class="spd on" data-s="1">1×</button>
+        <button class="spd"    data-s="2">2×</button>
+        <button class="spd"    data-s="4">4×</button>
+        <button class="spd"    data-s="8">8×</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="legend">
+  <span>🌿 Plants grow faster in rain, barely in drought</span>
+  <span>🐇 Prey (yellow circles) eat plants, flee predators</span>
+  <span>🦊 Predators (red diamonds) hunt prey</span>
+  <span>Energy bar above each creature · Traits mutate each generation</span>
+</div>
+
+<script>
+
+// === js/core/config.js ===
+// js/core/config.js — all tuneable simulation constants
+var CFG = {
+  W: 840,
+  H: 560,
+  DAY_LEN: 1200,
+  WEATHER_INTERVAL: 900,
+  TICK_MS: 33,
+
+  PLANT: {
+    INIT: 60, MAX: 140,
+    RATE: 0.004,
+    ENERGY: 40,
+    SMIN: 4, SMAX: 10,
+  },
+
+  HERB: {
+    INIT: 20, MAX: 60,
+    SPEED: 1.3,
+    E0: 80,   EMAX: 120,
+    DRAIN: 0.12,
+    EAT: 40,
+    REPR_THR: 100, REPR_COST: 50, REPR_CD: 300,
+    PERC: 90,
+    SIZE: 6,
+    MUT: 0.10,
+  },
+
+  PRED: {
+    INIT: 5, MAX: 20,
+    SPEED: 1.9,
+    E0: 100,  EMAX: 160,
+    DRAIN: 0.18,
+    EAT: 70,
+    REPR_THR: 130, REPR_COST: 70, REPR_CD: 500,
+    PERC: 140,
+    SIZE: 9,
+    MUT: 0.10,
+  },
+
+  MUT_SPEED:  0.30,
+  MUT_PERC:  18,
+  MUT_SIZE:   1.5,
+};
+
+
+// === js/utils/math.js ===
+// js/utils/math.js — pure math helpers
+var MathU = {
+  rnd:   (a, b) => Math.random() * (b - a) + a,
+  ri:    (a, b) => Math.floor(Math.random() * (b - a + 1)) + a,
+  clamp: (v, lo, hi) => Math.max(lo, Math.min(hi, v)),
+  dist:  (a, b) => Math.hypot(a.x - b.x, a.y - b.y),
+  rPos:  (m = 20) => ({ x: MathU.rnd(m, CFG.W - m), y: MathU.rnd(m, CFG.H - m) }),
+};
+
+
+// === js/utils/color.js ===
+// js/utils/color.js — color interpolation helpers
+var ColorU = {
+  // Interpolate between two hex colours, returns rgb() string
+  lerpC(h1, h2, t) {
+    const p = s => parseInt(s, 16);
+    const r1 = p(h1.slice(1,3)), g1 = p(h1.slice(3,5)), b1 = p(h1.slice(5,7));
+    const r2 = p(h2.slice(1,3)), g2 = p(h2.slice(3,5)), b2 = p(h2.slice(5,7));
+    return `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
+  },
+
+  // Inject alpha into an rgb() string → rgba()
+  rgba(rgb, a) {
+    return rgb.replace('rgb(', 'rgba(').replace(')', `,${a})`);
+  },
+};
+
+
+// === js/utils/vector.js ===
+// js/utils/vector.js — 2-D vector steering helpers (operates on objects with .vx/.vy)
+var VecU = {
+  steerToward(entity, tx, ty, force = 0.3) {
+    const a = Math.atan2(ty - entity.y, tx - entity.x);
+    entity.vx += Math.cos(a) * force;
+    entity.vy += Math.sin(a) * force;
+  },
+
+  steerAway(entity, tx, ty, force = 0.5) {
+    const a = Math.atan2(entity.y - ty, entity.x - tx);
+    entity.vx += Math.cos(a) * force;
+    entity.vy += Math.sin(a) * force;
+  },
+
+  capSpeed(entity, maxSpd) {
+    const mag = Math.hypot(entity.vx, entity.vy);
+    if (mag > maxSpd) {
+      entity.vx = (entity.vx / mag) * maxSpd;
+      entity.vy = (entity.vy / mag) * maxSpd;
+    }
+    entity.vx *= 0.92;
+    entity.vy *= 0.92;
+  },
+
+  applyAndBounce(entity) {
+    entity.x = MathU.clamp(entity.x + entity.vx, 5, CFG.W - 5);
+    entity.y = MathU.clamp(entity.y + entity.vy, 5, CFG.H - 5);
+    if (entity.x <= 5 || entity.x >= CFG.W - 5) entity.vx *= -1;
+    if (entity.y <= 5 || entity.y >= CFG.H - 5) entity.vy *= -1;
+  },
+
+  headingAngle(entity) {
+    return Math.atan2(entity.vy, entity.vx);
+  },
+};
+
+
+// === js/utils/genetics.js ===
+// js/utils/genetics.js — gene mutation helpers
+var GeneticsU = {
+  mutate(value, delta, lo, hi, rate) {
+    if (Math.random() >= rate) return value;
+    return MathU.clamp(value + MathU.rnd(-delta, delta), lo, hi);
+  },
+
+  childGenes(genes, cfg) {
+    return {
+      speed: GeneticsU.mutate(genes.speed, CFG.MUT_SPEED, 0.4,  4.0,  cfg.MUT),
+      perc:  GeneticsU.mutate(genes.perc,  CFG.MUT_PERC,  30,   250,  cfg.MUT),
+      size:  GeneticsU.mutate(genes.size,  CFG.MUT_SIZE,  3,    16,   cfg.MUT),
+    };
+  },
+
+  defaultGenes(cfg) {
+    return { speed: cfg.SPEED, perc: cfg.PERC, size: cfg.SIZE };
+  },
+};
+
+
+// === js/utils/canvas.js ===
+// js/utils/canvas.js — reusable canvas drawing primitives
+var CanvasU = {
+  roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arcTo(x + w, y,     x + w, y + r,     r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h);
+    ctx.arcTo(x, y + h,     x, y + h - r,     r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y,         x + r, y,          r);
+    ctx.closePath();
+  },
+
+  panel(ctx, x, y, w, h, r = 8) {
+    CanvasU.roundRect(ctx, x, y, w, h, r);
+    ctx.fillStyle   = 'rgba(0,0,0,0.52)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+  },
+
+  energyBar(ctx, entity) {
+    const bw  = entity.g.size * 2.4;
+    const bh  = 3;
+    const bx  = entity.x - bw / 2;
+    const by  = entity.y - entity.g.size - 7;
+    const pct = MathU.clamp(entity.energy / entity.cfg.EMAX, 0, 1);
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.fillStyle = pct > 0.5 ? '#4ade80' : pct > 0.25 ? '#facc15' : '#f87171';
+    ctx.fillRect(bx, by, bw * pct, bh);
+    ctx.restore();
+  },
+
+  trail(ctx, trailArr, size, rgb) {
+    ctx.save();
+    for (let i = 1; i < trailArr.length; i++) {
+      const a = (i / trailArr.length) * 0.22;
+      ctx.beginPath();
+      ctx.arc(trailArr[i].x, trailArr[i].y, size * 0.35, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${rgb},${a})`;
+      ctx.fill();
+    }
+    ctx.restore();
+  },
+};
+
+
+// === js/systems/daynight.js ===
+// js/systems/daynight.js — day/night cycle calculations
+var DayNight = (() => {
+  let _tick = 0;
+
+  const dayPhase  = () => (_tick % CFG.DAY_LEN) / CFG.DAY_LEN;
+  const daylight  = () => Math.max(0, Math.sin(dayPhase() * Math.PI));
+  const isNight   = () => { const p = dayPhase(); return p < 0.1 || p > 0.9; };
+  const dayNum    = () => Math.floor(_tick / CFG.DAY_LEN) + 1;
+
+  function timeLabel() {
+    const p = dayPhase();
+    if (p < 0.05 || p > 0.95) return '🌑 Midnight';
+    if (p < 0.25)              return '🌄 Dawn';
+    if (p < 0.75)              return '☀️ Day';
+    return '🌆 Dusk';
+  }
+
+  function skyBase(weatherKey) {
+    const dl = daylight();
+    const map = {
+      clear:   '#1a2744',
+      rain:    '#111827',
+      storm:   '#130d1a',
+      drought: '#2d1800',
+      fog:     '#1c2433',
+    };
+    return ColorU.lerpC('#06080f', map[weatherKey] ?? '#1a2744', dl * 0.9 + 0.1);
+  }
+
+  function tick()  { _tick++; }
+  function reset() { _tick = 0; }
+
+  return { tick, reset, dayPhase, daylight, isNight, dayNum, timeLabel, skyBase,
+           get tickVal() { return _tick; } };
+})();
+
+
+// === js/systems/weather.js ===
+// js/systems/weather.js — weather state machine
+var Weather = (() => {
+  let current = 'clear', next = 'clear', blend = 1, wTick = 0;
+
+  const WEIGHTS = { clear: 0.40, rain: 0.25, storm: 0.10, drought: 0.15, fog: 0.10 };
+  const ICONS   = { clear: '☀️', rain: '🌧️', storm: '⛈️', drought: '🔥', fog: '🌫️' };
+
+  function pick() {
+    let r = Math.random(), acc = 0;
+    for (const [w, v] of Object.entries(WEIGHTS)) { acc += v; if (r < acc) return w; }
+    return 'clear';
+  }
+
+  function tick() {
+    wTick++;
+    if (blend < 1) { blend = Math.min(1, blend + 0.005); if (blend >= 1) current = next; }
+    if (wTick >= CFG.WEATHER_INTERVAL) {
+      wTick = 0;
+      const c = pick();
+      if (c !== current) { next = c; blend = 0; }
+    }
+  }
+
+  function reset() { current = 'clear'; next = 'clear'; blend = 1; wTick = 0; }
+
+  const label      = () => `${ICONS[current]} ${current[0].toUpperCase() + current.slice(1)}`;
+  const plantMod   = () => ({ clear: 1, rain: 2.5, storm: 0.5, drought: 0.15, fog: 0.8  }[current] ?? 1);
+  const speedMod   = () => ({ storm: 0.6, fog: 0.75, rain: 0.85 }[current] ?? 1);
+  const drainMod   = () => ({ storm: 1.4, drought: 1.3 }[current] ?? 1);
+
+  function particles() {
+    if (current === 'rain')  return { type: 'rain',  n: 60,  col: '#60a5fa' };
+    if (current === 'storm') return { type: 'storm', n: 110, col: '#93c5fd' };
+    if (current === 'fog')   return { type: 'fog',   n: 18,  col: '#94a3b8' };
+    return null;
+  }
+
+  return { tick, reset, label, plantMod, speedMod, drainMod, particles,
+           get current() { return current; } };
+})();
+
+
+// === js/systems/environment.js ===
+// js/systems/environment.js — facade that combines DayNight + Weather
+var Env = {
+  update() { DayNight.tick(); Weather.tick(); },
+  reset()  { DayNight.reset(); Weather.reset(); },
+
+  daylight:  () => DayNight.daylight(),
+  isNight:   () => DayNight.isNight(),
+  dayPhase:  () => DayNight.dayPhase(),
+  dayNum:    () => DayNight.dayNum(),
+  timeLabel: () => DayNight.timeLabel(),
+  skyColor:  () => DayNight.skyBase(Weather.current),
+  wLabel:    () => Weather.label(),
+  particles: () => Weather.particles(),
+  plantMod:  () => Weather.plantMod(),
+  speedMod:  () => Weather.speedMod(),
+  drainMod:  () => Weather.drainMod(),
+
+  get tick()    { return DayNight.tickVal; },
+  get weather() { return Weather.current; },
+};
+
+
+// === js/systems/stats.js ===
+// js/systems/stats.js — population history + lifetime totals
+var Stats = (() => {
+  const MAX = 200;
+  let hist = { pl: [], he: [], pr: [] };
+  let tot  = { hb: 0, hd: 0, pb: 0, kills: 0 };
+
+  function record(pl, he, pr) {
+    hist.pl.push(pl.length);
+    hist.he.push(he.length);
+    hist.pr.push(pr.length);
+    if (hist.pl.length > MAX) { hist.pl.shift(); hist.he.shift(); hist.pr.shift(); }
+  }
+
+  function avgGenes(arr) {
+    if (!arr.length) return { speed: 0, perc: 0, size: 0 };
+    const s = arr.reduce((a, b) => ({
+      speed: a.speed + b.g.speed,
+      perc:  a.perc  + b.g.perc,
+      size:  a.size  + b.g.size,
+    }), { speed: 0, perc: 0, size: 0 });
+    const n = arr.length;
+    return {
+      speed: +(s.speed / n).toFixed(2),
+      perc:  +(s.perc  / n).toFixed(0),
+      size:  +(s.size  / n).toFixed(1),
+    };
+  }
+
+  function maxGen(arr) { return arr.length ? Math.max(...arr.map(a => a.gen)) : 0; }
+
+  function reset() {
+    hist = { pl: [], he: [], pr: [] };
+    tot  = { hb: 0, hd: 0, pb: 0, kills: 0 };
+  }
+
+  return { record, avgGenes, maxGen, reset,
+           get hist() { return hist; },
+           get tot()  { return tot;  } };
+})();
+
+
+// === js/systems/foodchain.js ===
+// js/systems/foodchain.js — eating interactions between entity layers
+var FoodChain = {
+  // Returns nearest alive target within range, or null
+  nearest(seeker, targets, range) {
+    let best = null, bestD = range;
+    for (const t of targets) {
+      if (!t.alive) continue;
+      const d = MathU.dist(seeker, t);
+      if (d < bestD) { bestD = d; best = t; }
+    }
+    return best;
+  },
+
+  // Herbivore tries to eat a plant; returns true if eaten
+  tryEatPlant(herb, plant) {
+    if (MathU.dist(herb, plant) < herb.g.size + plant.size) {
+      plant.alive  = false;
+      herb.energy  = Math.min(herb.cfg.EMAX, herb.energy + herb.cfg.EAT);
+      herb.flash   = 8;
+      return true;
+    }
+    return false;
+  },
+
+  // Predator tries to eat a herbivore; returns true if eaten
+  tryEatHerb(pred, herb) {
+    if (MathU.dist(pred, herb) < pred.g.size + herb.g.size - 2) {
+      herb.alive  = false;
+      pred.energy = Math.min(pred.cfg.EMAX, pred.energy + pred.cfg.EAT);
+      pred.flash  = 10;
+      Stats.tot.kills++;
+      return true;
+    }
+    return false;
+  },
+};
+
+
+// === js/systems/reproduction.js ===
+// js/systems/reproduction.js — reproduction logic shared by animals
+var Reproduction = {
+  canReproduce(animal) {
+    return animal.energy  >= animal.cfg.REPR_THR
+        && animal.rTimer  >= animal.cfg.REPR_CD;
+  },
+
+  // Deducts cost, resets timer, returns child gene/position data
+  spawn(animal) {
+    animal.energy -= animal.cfg.REPR_COST;
+    animal.rTimer  = 0;
+    return {
+      genes: GeneticsU.childGenes(animal.g, animal.cfg),
+      x:     animal.x + MathU.rnd(-20, 20),
+      y:     animal.y + MathU.rnd(-20, 20),
+      gen:   animal.gen + 1,
+    };
+  },
+};
+
+
+// === js/systems/particles.js ===
+// js/systems/particles.js — rain, storm, fog weather particles
+var Particles = (() => {
+  let drops = [], fog = [];
+
+  function reset() { drops = []; fog = []; }
+
+  function _spawnDrop(storm) {
+    drops.push({
+      x:   MathU.rnd(0, CFG.W),
+      y:   MathU.rnd(-20, 0),
+      len: MathU.rnd(storm ? 14 : 7, storm ? 28 : 16),
+      spd: MathU.rnd(storm ? 13 : 6, storm ? 21 : 12),
+      a:   MathU.rnd(0.25, 0.65),
+    });
+  }
+
+  function _spawnFog() {
+    fog.push({
+      x:  MathU.rnd(-60, CFG.W + 60),
+      y:  MathU.rnd(0, CFG.H),
+      r:  MathU.rnd(60, 130),
+      vx: MathU.rnd(0.2, 0.5),
+      a:  MathU.rnd(0.04, 0.11),
+    });
+  }
+
+  function update(info) {
+    if (!info) { drops = []; fog = []; return; }
+    if (info.type === 'fog') {
+      drops = [];
+      while (fog.length < info.n) _spawnFog();
+      fog.forEach(b => b.x += b.vx);
+      fog = fog.filter(b => b.x < CFG.W + 90);
+    } else {
+      fog = [];
+      const st = info.type === 'storm';
+      while (drops.length < info.n) _spawnDrop(st);
+      drops.forEach(d => { d.y += d.spd; d.x += st ? 3 : 0.5; });
+      drops = drops.filter(d => d.y < CFG.H + 40);
+    }
+  }
+
+  let ltimer = 0;
+
+  function draw(ctx, info) {
+    if (!info) return;
+    ctx.save();
+    if (info.type === 'fog') {
+      for (const b of fog) {
+        const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+        g.addColorStop(0, `rgba(148,163,184,${b.a})`);
+        g.addColorStop(1, 'rgba(148,163,184,0)');
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fillStyle = g; ctx.fill();
+      }
+    } else {
+      const st = info.type === 'storm';
+      ctx.strokeStyle = info.col; ctx.lineWidth = st ? 1.5 : 1;
+      for (const d of drops) {
+        ctx.globalAlpha = d.a;
+        ctx.beginPath();
+        ctx.moveTo(d.x, d.y);
+        ctx.lineTo(d.x + (st ? 4 : 1), d.y + d.len);
+        ctx.stroke();
+      }
+      ltimer++;
+      if (st && ltimer % 180 < 3) {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = 'rgba(200,220,255,0.07)';
+        ctx.fillRect(0, 0, CFG.W, CFG.H);
+      }
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  return { update, draw, reset };
+})();
+
+
+// === js/entities/animal.js ===
+// js/entities/animal.js — base Animal class
+var Animal = class Animal {
+  constructor(cfg, x, y, genes, gen) {
+    this.cfg    = cfg;
+    this.x      = x  ?? MathU.rnd(20, CFG.W - 20);
+    this.y      = y  ?? MathU.rnd(20, CFG.H - 20);
+    this.g      = genes ?? GeneticsU.defaultGenes(cfg);
+    this.energy = cfg.E0;
+    this.alive  = true;
+    this.age    = 0;
+    this.rTimer = MathU.ri(0, cfg.REPR_CD);
+    this.gen    = gen ?? 0;
+    this.flash  = 0;
+    this.vx     = MathU.rnd(-1, 1);
+    this.vy     = MathU.rnd(-1, 1);
+    this.tx     = null;
+    this.ty     = null;
+    this.trail  = [];
+  }
+
+  _wander() {
+    if (!this.tx || MathU.dist(this, { x: this.tx, y: this.ty }) < 15) {
+      const p = MathU.rPos(); this.tx = p.x; this.ty = p.y;
+    }
+    VecU.steerToward(this, this.tx, this.ty);
+  }
+
+  _baseUpdate() {
+    this.age++;
+    this.rTimer++;
+    this.flash = Math.max(0, this.flash - 1);
+    this.energy -= this.cfg.DRAIN * Env.drainMod() * (this.g.size / this.cfg.SIZE);
+    if (this.energy <= 0) { this.alive = false; return; }
+    this.trail.push({ x: this.x, y: this.y });
+    if (this.trail.length > 7) this.trail.shift();
+    VecU.capSpeed(this, this.g.speed * Env.speedMod());
+    VecU.applyAndBounce(this);
+  }
+};
+
+
+// === js/entities/plant.js ===
+// js/entities/plant.js — Plant entity
+var Plant = class Plant {
+  constructor(x, y) {
+    this.x     = x ?? MathU.rnd(10, CFG.W - 10);
+    this.y     = y ?? MathU.rnd(10, CFG.H - 10);
+    this.size  = MathU.rnd(CFG.PLANT.SMIN, CFG.PLANT.SMAX);
+    this.alive = true;
+    this.phase = Math.random() * Math.PI * 2;
+  }
+
+  update() { this.phase += 0.018; }
+
+  draw(ctx) {
+    const dl  = Env.daylight();
+    const w   = Env.weather;
+    const col = w === 'drought' ? '#a16207'
+              : w === 'rain'    ? '#86efac'
+              : ColorU.lerpC('#166534', '#4ade80', dl);
+    const sx  = Math.sin(this.phase) * 1.4;
+
+    ctx.save();
+    ctx.translate(this.x + sx, this.y);
+
+    // Stem
+    ctx.beginPath();
+    ctx.strokeStyle = ColorU.lerpC('#14532d', '#86efac', dl * 0.5);
+    ctx.lineWidth   = 1.5;
+    ctx.moveTo(0, 0); ctx.lineTo(0, -this.size * 1.4);
+    ctx.stroke();
+
+    // Leaf
+    ctx.beginPath();
+    ctx.arc(0, -this.size * 1.4, this.size, 0, Math.PI * 2);
+    ctx.fillStyle   = col;
+    ctx.globalAlpha = 0.82 + dl * 0.18;
+    ctx.fill();
+
+    // Highlight
+    ctx.beginPath();
+    ctx.arc(-this.size * 0.3, -this.size * 1.7, this.size * 0.3, 0, Math.PI * 2);
+    ctx.fillStyle   = 'rgba(255,255,255,0.15)';
+    ctx.globalAlpha = 1;
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+};
+
+
+// === js/entities/herbivore.js ===
+// js/entities/herbivore.js — Herbivore (prey)
+var Herb = class Herb extends Animal {
+  constructor(x, y, genes, gen) {
+    super(CFG.HERB, x, y, genes, gen);
+    this.flee = false;
+  }
+
+  update(plants, preds) {
+    if (!this.alive) return null;
+    this.flee = false;
+
+    // 1. Flee nearest predator
+    const threat = FoodChain.nearest(this, preds, this.g.perc);
+    if (threat) {
+      this.flee = true;
+      VecU.steerAway(this, threat.x, threat.y);
+    } else {
+      // 2. Seek nearest plant
+      const plant = FoodChain.nearest(this, plants, this.g.perc);
+      if (plant) {
+        VecU.steerToward(this, plant.x, plant.y);
+        FoodChain.tryEatPlant(this, plant);
+      } else {
+        this._wander();
+      }
+    }
+
+    this._baseUpdate();
+
+    if (Reproduction.canReproduce(this)) {
+      const d = Reproduction.spawn(this);
+      Stats.tot.hb++;
+      return new Herb(d.x, d.y, d.genes, d.gen);
+    }
+    return null;
+  }
+
+  draw(ctx) {
+    const dl  = Env.daylight();
+    const col = this.flash > 0  ? '#ffffff'
+              : this.flee        ? '#fb923c'
+              : ColorU.lerpC('#ca8a04', '#facc15', dl);
+
+    CanvasU.trail(ctx, this.trail, this.g.size, '250,204,21');
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    ctx.beginPath();
+    ctx.arc(0, 0, this.g.size, 0, Math.PI * 2);
+    ctx.fillStyle = col;
+    ctx.fill();
+
+    const ea = VecU.headingAngle(this);
+    ctx.beginPath();
+    ctx.arc(Math.cos(ea) * this.g.size * 0.5, Math.sin(ea) * this.g.size * 0.5,
+            this.g.size * 0.24, 0, Math.PI * 2);
+    ctx.fillStyle = '#0f172a';
+    ctx.fill();
+
+    ctx.strokeStyle = this.flee ? '#f97316' : 'rgba(255,255,255,0.2)';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.g.size, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.restore();
+    CanvasU.energyBar(ctx, this);
+  }
+};
+
+
+// === js/entities/predator.js ===
+// js/entities/predator.js — Predator (apex)
+var Pred = class Pred extends Animal {
+  constructor(x, y, genes, gen) {
+    super(CFG.PRED, x, y, genes, gen);
+    this.hunt = false;
+  }
+
+  update(herbs) {
+    if (!this.alive) return null;
+    this.hunt = false;
+
+    const target = FoodChain.nearest(this, herbs, this.g.perc);
+    if (target) {
+      this.hunt = true;
+      VecU.steerToward(this, target.x, target.y);
+      FoodChain.tryEatHerb(this, target);
+    } else {
+      this._wander();
+    }
+
+    this._baseUpdate();
+
+    if (Reproduction.canReproduce(this)) {
+      const d = Reproduction.spawn(this);
+      Stats.tot.pb++;
+      return new Pred(d.x, d.y, d.genes, d.gen);
+    }
+    return null;
+  }
+
+  draw(ctx) {
+    const dl  = Env.daylight();
+    const col = this.flash > 0 ? '#ffffff'
+              : this.hunt       ? '#dc2626'
+              : ColorU.lerpC('#991b1b', '#f87171', dl);
+
+    CanvasU.trail(ctx, this.trail, this.g.size, '248,113,113');
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    const s = this.g.size;
+
+    ctx.beginPath();
+    ctx.moveTo(0, -s * 1.3); ctx.lineTo(s, 0);
+    ctx.lineTo(0, s * 0.8);  ctx.lineTo(-s, 0);
+    ctx.closePath();
+    ctx.fillStyle = col;
+    ctx.fill();
+
+    const ea = VecU.headingAngle(this);
+    ctx.beginPath();
+    ctx.arc(Math.cos(ea) * s * 0.5, Math.sin(ea) * s * 0.5, s * 0.28, 0, Math.PI * 2);
+    ctx.fillStyle = this.hunt ? '#fef08a' : '#0f172a';
+    ctx.fill();
+
+    ctx.strokeStyle = this.hunt ? 'rgba(220,38,38,0.7)' : 'rgba(255,255,255,0.18)';
+    ctx.lineWidth   = this.hunt ? 2 : 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -s * 1.3); ctx.lineTo(s, 0);
+    ctx.lineTo(0, s * 0.8);  ctx.lineTo(-s, 0);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.restore();
+    CanvasU.energyBar(ctx, this);
+  }
+};
+
+
+// === js/render/stars.js ===
+// js/render/stars.js — static star field, twinkle at night
+var Stars = (() => {
+  const pool = Array.from({ length: 90 }, () => ({
+    x:  Math.random() * 840,
+    y:  Math.random() * 560,
+    r:  Math.random() * 1.2 + 0.3,
+    tw: Math.random() * Math.PI * 2,
+  }));
+
+  function draw(ctx) {
+    const night = 1 - Env.daylight();
+    if (night < 0.05) return;
+    ctx.save();
+    for (const s of pool) {
+      s.tw += 0.04;
+      const a = night * (0.5 + 0.5 * Math.sin(s.tw)) * 0.75;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${a})`;
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  return { draw };
+})();
+
+
+// === js/render/hud.js ===
+// js/render/hud.js — HUD: day arc, time label, weather label
+var HUD = {
+  draw(ctx) {
+    const phase = Env.dayPhase();
+    const dl    = Env.daylight();
+    const cx    = CFG.W / 2, cy = 26, R = 17;
+
+    ctx.save();
+
+    // Background arc
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth   = 3;
+    ctx.stroke();
+
+    // Progress arc
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + phase * Math.PI * 2);
+    ctx.strokeStyle = phase < 0.5 ? '#facc15' : '#60a5fa';
+    ctx.lineWidth   = 3;
+    ctx.stroke();
+
+    // Sun / Moon icon
+    ctx.font      = '14px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(dl > 0.3 ? '☀️' : '🌙', cx, cy + 5);
+
+    // Day number
+    ctx.fillStyle = 'rgba(255,255,255,0.65)';
+    ctx.font      = '700 10px system-ui';
+    ctx.fillText(`DAY ${Env.dayNum()}`, cx, cy + 25);
+
+    // Top-right labels
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font      = '11px system-ui';
+    ctx.fillText(Env.timeLabel(), CFG.W - 9, 18);
+    ctx.fillText(Env.wLabel(),    CFG.W - 9, 33);
+
+    ctx.restore();
+  },
+};
+
+
+// === js/render/chart.js ===
+// js/render/chart.js — in-canvas population line chart
+var Chart = {
+  draw(ctx, x, y, w, h) {
+    const hist = Stats.hist;
+    if (hist.pl.length < 2) return;
+
+    ctx.save();
+    CanvasU.panel(ctx, x, y, w, h);
+
+    // Title
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font      = '700 10px system-ui';
+    ctx.textAlign = 'left';
+    ctx.fillText('POPULATION HISTORY', x + 9, y + 14);
+
+    const pad = { l: 9, r: 9, t: 22, b: 16 };
+    const cw  = w - pad.l - pad.r;
+    const ch  = h - pad.t - pad.b;
+    const mv  = Math.max(1, ...hist.pl, ...hist.he, ...hist.pr);
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth   = 1;
+    for (let i = 0; i <= 4; i++) {
+      const gy = y + pad.t + (ch / 4) * i;
+      ctx.beginPath(); ctx.moveTo(x + pad.l, gy); ctx.lineTo(x + pad.l + cw, gy); ctx.stroke();
+    }
+
+    // Series
+    const series = [
+      { d: hist.pl, c: '#4ade80', lb: 'Plants' },
+      { d: hist.he, c: '#facc15', lb: 'Prey'   },
+      { d: hist.pr, c: '#f87171', lb: 'Pred'   },
+    ];
+    for (const s of series) {
+      if (s.d.length < 2) continue;
+      ctx.beginPath(); ctx.strokeStyle = s.c; ctx.lineWidth = 1.5; ctx.lineJoin = 'round';
+      s.d.forEach((v, i) => {
+        const px = x + pad.l + (i / (s.d.length - 1)) * cw;
+        const py = y + pad.t + ch - (v / mv) * ch;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+    }
+
+    // Legend
+    let lx = x + pad.l;
+    for (const s of series) {
+      ctx.fillStyle = s.c; ctx.fillRect(lx, y + h - 13, 7, 5);
+      ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '9px system-ui'; ctx.textAlign = 'left';
+      ctx.fillText(s.lb, lx + 9, y + h - 8);
+      lx += 50;
+    }
+    ctx.restore();
+  },
+};
+
+
+// === js/render/scene.js ===
+// js/render/scene.js — composes a full frame onto the canvas
+var Scene = {
+  draw(ctx, plants, herbs, preds) {
+    const W = CFG.W, H = CFG.H;
+
+    // Sky
+    ctx.fillStyle = Env.skyColor();
+    ctx.fillRect(0, 0, W, H);
+
+    // Stars (visible at night)
+    Stars.draw(ctx);
+
+    // Weather particles
+    Particles.draw(ctx, Env.particles());
+
+    // Entities — back to front
+    plants.forEach(p => p.draw(ctx));
+    herbs.forEach(h  => h.draw(ctx));
+    preds.forEach(p  => p.draw(ctx));
+
+    // Overlays
+    Chart.draw(ctx, 8, H - 112, 215, 104);
+    HUD.draw(ctx);
+  },
+};
+
+
+// === js/ui/updater.js ===
+// js/ui/updater.js — writes live data into the dashboard DOM
+var UIUpdater = {
+  update() {
+    const { plants, herbs, preds } = World;
+    const t  = Stats.tot;
+    const hg = Stats.avgGenes(herbs);
+    const pg = Stats.avgGenes(preds);
+
+    // Population counts
+    document.getElementById('cPlants').textContent = plants.length;
+    document.getElementById('cHerbs').textContent  = herbs.length;
+    document.getElementById('cPreds').textContent  = preds.length;
+
+    // Environment
+    document.getElementById('eDay').textContent     = `Day ${Env.dayNum()}`;
+    document.getElementById('eTime').textContent    = Env.timeLabel();
+    document.getElementById('eWeather').textContent = Env.wLabel();
+    document.getElementById('eDL').textContent      = Math.round(Env.daylight() * 100) + '%';
+
+    // Genetics
+    document.getElementById('tHS').textContent  = hg.speed;
+    document.getElementById('tPS').textContent  = pg.speed;
+    document.getElementById('tHV').textContent  = hg.perc;
+    document.getElementById('tPV').textContent  = pg.perc;
+    document.getElementById('tHSz').textContent = hg.size;
+    document.getElementById('tPSz').textContent = pg.size;
+    document.getElementById('tHG').textContent  = Stats.maxGen(herbs);
+    document.getElementById('tPG').textContent  = Stats.maxGen(preds);
+
+    // Speed bars
+    document.getElementById('bHS').style.cssText = `width:${Math.min(100,(hg.speed/4)*100)}%;background:#facc15`;
+    document.getElementById('bPS').style.cssText = `width:${Math.min(100,(pg.speed/4)*100)}%;background:#f87171`;
+
+    // Totals
+    document.getElementById('totHB').textContent = t.hb;
+    document.getElementById('totHD').textContent = t.hd;
+    document.getElementById('totPB').textContent = t.pb;
+    document.getElementById('totK').textContent  = t.kills;
+  },
+};
+
+
+// === js/ui/controls.js ===
+// js/ui/controls.js — button and speed-selector event bindings
+var Controls = {
+  init() {
+    document.getElementById('btnPause').addEventListener('click', () => {
+      Simulation.pause();
+      document.getElementById('btnPause').textContent =
+        Simulation.running ? '⏸ Pause' : '▶ Resume';
+    });
+
+    document.getElementById('btnReset').addEventListener('click', () => {
+      document.getElementById('btnPause').textContent = '⏸ Pause';
+      Simulation.reset();
+    });
+
+    document.getElementById('btnPlant').addEventListener('click', () => World.addPlant(8));
+    document.getElementById('btnHerb').addEventListener('click',  () => World.addHerb());
+    document.getElementById('btnPred').addEventListener('click',  () => World.addPred());
+
+    document.querySelectorAll('.spd').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.spd').forEach(b => b.classList.remove('on'));
+        btn.classList.add('on');
+        Simulation.setSpeed(parseInt(btn.dataset.s));
+      });
+    });
+  },
+};
+
+
+// === js/ui/ui.js ===
+// js/ui/ui.js — public UI facade used by the simulation loop
+var UI = {
+  init()   { Controls.init(); },
+  update() { UIUpdater.update(); },
+};
+
+
+// === js/core/world.js ===
+// js/core/world.js — entity pools, spawning, and per-tick lifecycle
+var World = (() => {
+  let plants = [], herbs = [], preds = [];
+
+  function init() {
+    plants = []; herbs = []; preds = [];
+    for (let i = 0; i < CFG.PLANT.INIT; i++) plants.push(new Plant());
+    for (let i = 0; i < CFG.HERB.INIT;  i++) herbs.push(new Herb());
+    for (let i = 0; i < CFG.PRED.INIT;  i++) preds.push(new Pred());
+  }
+
+  function tick() {
+    // Plants — grow faster in rain, daylight helps too
+    const gm = Env.plantMod() * (Env.daylight() * 0.6 + 0.4);
+    if (plants.length < CFG.PLANT.MAX && Math.random() < CFG.PLANT.RATE * gm)
+      plants.push(new Plant());
+    plants.forEach(p => p.update());
+    plants = plants.filter(p => p.alive);
+
+    // Herbivores
+    const newH = [];
+    herbs.forEach(h => { const c = h.update(plants, preds); if (c) newH.push(c); });
+    const dh = herbs.filter(h => !h.alive).length;
+    Stats.tot.hd += dh;
+    herbs = herbs.filter(h => h.alive);
+    if (herbs.length < CFG.HERB.MAX) herbs.push(...newH);
+
+    // Predators
+    const newP = [];
+    preds.forEach(p => { const c = p.update(herbs); if (c) newP.push(c); });
+    preds = preds.filter(p => p.alive);
+    if (preds.length < CFG.PRED.MAX) preds.push(...newP);
+
+    // Particles
+    Particles.update(Env.particles());
+
+    // Stats snapshot every 20 ticks
+    if (Env.tick % 20 === 0) Stats.record(plants, herbs, preds);
+  }
+
+  // Manual spawn buttons
+  function addPlant(n = 8) { for (let i = 0; i < n && plants.length < CFG.PLANT.MAX; i++) plants.push(new Plant()); }
+  function addHerb()  { if (herbs.length  < CFG.HERB.MAX)  herbs.push(new Herb()); }
+  function addPred()  { if (preds.length  < CFG.PRED.MAX)  preds.push(new Pred()); }
+
+  return {
+    init, tick, addPlant, addHerb, addPred,
+    get plants() { return plants; },
+    get herbs()  { return herbs;  },
+    get preds()  { return preds;  },
+  };
+})();
+
+
+// === js/core/simulation.js ===
+// js/core/simulation.js — requestAnimationFrame loop
+var Simulation = (() => {
+  let running = false, speed = 1, rafId = null, lastT = 0;
+
+  function _frame(ts) {
+    rafId = requestAnimationFrame(_frame);
+    if (!running) return;
+    if (ts - lastT >= CFG.TICK_MS) {
+      lastT = ts;
+      for (let s = 0; s < speed; s++) {
+        Env.update();
+        World.tick();
+      }
+      const canvas = document.getElementById('eco');
+      Scene.draw(canvas.getContext('2d'), World.plants, World.herbs, World.preds);
+      UI.update();
+    }
+  }
+
+  function start() {
+    running = true;
+    if (rafId) cancelAnimationFrame(rafId);
+    lastT = 0;
+    rafId = requestAnimationFrame(_frame);
+  }
+
+  function pause() {
+    running = !running;
+  }
+
+  function reset() {
+    running = false;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    Env.reset(); Stats.reset(); Particles.reset(); World.init();
+    setTimeout(() => { start(); }, 50);
+  }
+
+  function setSpeed(s) { speed = s; }
+
+  return { start, pause, reset, setSpeed, get running() { return running; } };
+})();
+
+
+// === Bootstrap ===
+document.addEventListener('DOMContentLoaded', function() {
+  UI.init();
+  World.init();
+  Simulation.start();
+});
+</script>
+</body>
+</html>
