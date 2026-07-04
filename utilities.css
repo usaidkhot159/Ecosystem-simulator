@@ -1,0 +1,17 @@
+/* utilities.css */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--panel); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+::selection { background: rgba(96,165,250,0.25); }
+
+.text-green  { color: var(--green);  }
+.text-yellow { color: var(--yellow); }
+.text-red    { color: var(--red);    }
+.text-blue   { color: var(--blue);   }
+.text-muted  { color: var(--muted);  }
+
+.mt-sm { margin-top: 6px;  }
+.mt-md { margin-top: 11px; }
+
+.tabular { font-variant-numeric: tabular-nums; }
