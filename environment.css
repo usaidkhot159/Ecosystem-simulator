@@ -1,0 +1,18 @@
+/* environment.css */
+.env-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.79rem;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.env-row:last-child { border: none; }
+
+.env-lbl { color: var(--muted); }
+
+.env-val {
+  font-weight: 600;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
